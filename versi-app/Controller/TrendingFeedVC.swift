@@ -7,55 +7,36 @@
 //
 
 import Foundation
-
-
+import RxSwift
+import RxCocoa
 
 import UIKit
 
-class TrendingFeedVC: UIViewController,UITableViewDelegate,UITableViewDataSource {
+class TrendingFeedVC: UIViewController {
     
     
 
     @IBOutlet weak var tableView: UITableView!
     
-   
+    var disposeBag = DisposeBag()
+    var publishSubject = PublishSubject<[Repo]>()
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        tableView.delegate = self
-        tableView.dataSource = self
-        tableView.reloadData()
-        DownloadService.instance.downloadTrendingRepos { (reposArray) in
-            print("\(reposArray[0].name)")
-              print("\(reposArray[0].numberOfForks)")
-            print("\(reposArray[1].name)")
-                         print("\(reposArray[1].numberOfForks)")
-
-        }
-//        DownloadService.instance.downloadTrendingReposDictArray { (dictArray) in
-//            print(dictArray)
-//        }
-    }
-    
-    func numberOfSections(in tableView: UITableView) -> Int {
-        return 1
-    }
-    
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return 2
-    }
-    
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: "trendingRepoCell",for: indexPath) as? TrendingRepoCell
-            else {
-                return UITableViewCell()
-            }
+        fetchData()
         
-        let repo = Repo(image: UIImage(named: "searchIconLarge")!, name: "SWIFT", description: "Apple Programming Language", numberOfForks: 563, language: "Swift", noOfContributors: 1002, repoUrl: "www.google.com")
-        cell.configureCell(repo: repo)
-        return cell
+        publishSubject.bind(to: tableView.rx.items(cellIdentifier: "trendingRepoCell")){
+            (row,repo:Repo,cell:TrendingRepoCell) in
+            cell.configureCell(repo: repo)
+        }
+        .disposed(by: disposeBag)
+
     }
-
-
+    
+    func fetchData(){
+        DownloadService.instance.downloadTrendingRepos { (repoArray) in
+            self.publishSubject.onNext(repoArray)
+        }
+    }
 }
 

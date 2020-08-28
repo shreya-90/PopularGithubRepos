@@ -7,6 +7,8 @@
 //
 
 import UIKit
+import RxSwift
+import RxCocoa
 
 class TrendingRepoCell: UITableViewCell {
 
@@ -24,6 +26,8 @@ class TrendingRepoCell: UITableViewCell {
     
     private var repoUrl : String?
     
+    var disposeBag = DisposeBag()
+    
     override func awakeFromNib() {
         super.awakeFromNib()
         // Initialization code
@@ -37,6 +41,11 @@ class TrendingRepoCell: UITableViewCell {
         languageLbl.text = repo.language
         contributorsLbl.text = "\(repo.noOfContributors)"
         repoUrl = repo.repoUrl
+        
+        viewReadmeBtn.rx.tap.subscribe(onNext : {
+            self.window?.rootViewController?.presentSFSafariForVC(url: self.repoUrl!)
+        })
+        .disposed(by: disposeBag)
     }
     
     override func layoutSubviews() {
